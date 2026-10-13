@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aircast / Gesture Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css?v=aircast-11" />
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+  <div class="stage">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark"></span><span class="brand-name">Aircast</span><span class="brand-kicker">gesture studio / 01</span></div>
+      <div class="mode-switch" role="tablist" aria-label="Aircast mode">
+        <button class="mode-btn active" data-mode="draw" role="tab" aria-selected="true">Draw</button>
+        <button class="mode-btn" data-mode="remote" role="tab" aria-selected="false">Remote</button>
+      </div>
+    </header>
+
+    <main class="main-grid">
+      <section class="viewport-panel">
+        <div class="viewport" id="viewport">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="pixelCanvas" aria-hidden="true"></canvas>
+          <canvas id="canvas"></canvas>
+          <canvas id="landmarkCanvas" aria-hidden="true"></canvas>
+          <div class="pixel-sample-box" id="pixelSampleBox" aria-hidden="true"></div>
+          <div class="camera-message" id="cameraMessage"><div class="camera-message-icon">◎</div><strong>Camera access needed</strong><span>Allow camera access to start painting and controlling playback.</span><button class="solid-btn camera-btn" id="startCameraBtn">Enable camera</button></div>
+          <div class="viewport-meta"><span>LIVE FEED</span><span><span id="filterName">NORMAL</span> / <span id="fpsReadout">-- FPS</span></span></div>
+          <div class="hand-status" id="handStatus"><span class="dot"></span><span id="handStatusText">Camera offline</span></div>
+        </div>
+      </section>
+
+      <aside class="control-panel">
+        <div class="panel-block gesture-panel"><div class="label">Current gesture</div><div class="gesture-value" id="gestureValue">No hand detected</div><div class="gesture-detail" id="gestureDetail">Place your hand inside the frame</div></div>
+        <div class="panel-block draw-only" id="colorBlock"><div class="label">Trail color</div><div class="swatches" id="swatches">
+          <button class="swatch active" aria-label="Cyan" style="--c:#43E5FF" data-color="#43E5FF"></button><button class="swatch" aria-label="Magenta" style="--c:#FF3DBE" data-color="#FF3DBE"></button><button class="swatch" aria-label="Green" style="--c:#8BFF6B" data-color="#8BFF6B"></button><button class="swatch" aria-label="Amber" style="--c:#FFC24C" data-color="#FFC24C"></button><button class="swatch" aria-label="White" style="--c:#F2F0EA" data-color="#F2F0EA"></button>
+        </div><div class="hint">Pinch to cycle colors</div></div>
+        <div class="panel-block draw-only"><div class="label">Canvas</div><div class="btn-row"><button class="ghost-btn" id="clearBtn">Clear</button><button class="solid-btn" id="saveBtn">Save image</button></div><button class="interpret-btn" id="interpretBtn">Find image from drawing</button><div class="recognition-status" id="recognitionStatus">Write a word, then find its image</div><div class="recognized-word" id="recognizedWord"></div><img class="image-result hidden" id="imageResult" alt="" /></div>
+        <section class="panel-block pixel-analysis" aria-labelledby="pixelAnalysisTitle">
+          <div class="label" id="pixelAnalysisTitle">Pixel Analysis</div>
+          <div class="pixel-filter-row"><label for="pixelFilter">Display filter</label><select id="pixelFilter"><option value="normal">Normal</option><option value="grayscale">Grayscale</option><option value="binary">Binary</option><option value="noise">Salt &amp; Pepper</option></select></div>
+          <div class="pixel-slider"><label for="thresholdSlider">Threshold <output id="thresholdValue">127</output></label><input id="thresholdSlider" type="range" min="0" max="255" value="127" /></div>
+          <div class="pixel-slider"><label for="noiseSlider">Noise amount <output id="noiseValue">5%</output></label><input id="noiseSlider" type="range" min="0" max="20" value="5" /></div>
+          <div class="pixel-coordinates"><label for="sampleX">X <input id="sampleX" type="number" min="0" value="0" /></label><label for="sampleY">Y <input id="sampleY" type="number" min="0" value="0" /></label></div>
+          <div class="pixel-matrix-row"><label for="matrixChannel">Matrix values</label><select id="matrixChannel"><option value="red">Red channel</option><option value="green">Green channel</option><option value="blue">Blue channel</option><option value="grayscale">Grayscale</option><option value="binary">Binary</option><option value="noise">Salt &amp; Pepper preview</option></select></div>
+          <div class="matrix-caption" id="matrixCaption">Red channel / rows = y, cols = x</div>
+          <table class="pixel-matrix" id="pixelMatrix" aria-label="16 by 16 pixel matrix"></table>
+        </section>
+        <div class="panel-block remote-only hidden" id="remoteBlock"><div class="label">Last action</div><div class="action-value" id="actionValue">Waiting for a gesture...</div></div>
+        <div class="panel-block remote-only hidden player-block"><div class="label">Aircast player</div><div class="track-title" id="trackTitle">Neon Current</div><div class="track-meta"><span id="trackNumber">01</span><span class="track-progress"><span id="trackProgress"></span></span><span id="trackTime">0:00</span></div><div class="player-controls"><button class="player-btn" id="prevBtn" aria-label="Previous track">|◀</button><button class="player-btn player-btn-main" id="playBtn" aria-label="Play">▶</button><button class="player-btn" id="nextBtn" aria-label="Next track">▶|</button></div><label class="upload-btn" for="songUpload">+ Add local song</label><input id="songUpload" type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/*" hidden /><audio id="audio" preload="metadata"></audio></div>
+        <div class="panel-block"><div class="label">Gesture map</div><ul class="gesture-list" id="gestureList">
+            <li><span class="g-icon">01</span><span><b>Point</b>Draw / select</span></li><li><span class="g-icon">02</span><span><b>Peace</b>Erase</span></li><li><span class="g-icon">03</span><span><b>Pinch</b>Cycle color / volume down</span></li><li><span class="g-icon">04</span><span><b>Thumbs up</b>Volume up</span></li><li><span class="g-icon">05</span><span><b>Open palm</b>Clear / stop</span></li><li class="remote-only hidden"><span class="g-icon">06</span><span><b>3F → swipe</b>Next track</span></li><li class="remote-only hidden"><span class="g-icon">07</span><span><b>4F ← swipe</b>Previous track</span></li>
+        </ul></div>
+      </aside>
+    </main>
+  </div>
+  <script type="module" src="/static/script.js?v=aircast-12"></script>
+</body>
+</html>
